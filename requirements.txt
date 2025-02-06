@@ -1,0 +1,4 @@
+solders
+python-telegram-bot
+solana
+aiohttp
