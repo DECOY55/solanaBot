@@ -1,3 +1,5 @@
+fastapi
+uvicorn
 solders
 python-telegram-bot
 solana

@@ -1,6 +1,7 @@
-# app.py (Main File)
+# app.py (Main File) - Modified for Vercel
 import os
 import asyncio
+from fastapi import FastAPI
 from solders.keypair import Keypair
 from solana.rpc.async_api import AsyncClient
 from solana.rpc.websocket_api import connect
@@ -14,7 +15,9 @@ CHAT_ID = os.getenv("CHAT_ID")
 BUY_AMOUNT_SOL = float(os.getenv("BUY_AMOUNT_SOL", "0.05"))
 PROFIT_TARGET = float(os.getenv("PROFIT_TARGET", "1.5"))
 
-# ===== BOT CODE =====
+# ===== INIT FASTAPI =====
+app = FastAPI()
+
 class SolanaLaunchBot:
     def __init__(self):
         self.keypair = Keypair.from_base58_string(PRIVATE_KEY)
@@ -88,7 +91,10 @@ class SolanaLaunchBot:
         """Execute buy/sell trade"""
         print(f"{'Buying' if is_buy else 'Selling'} {token_address[:6]}...")
 
-# ===== VERCEL SETUP =====
-if __name__ == "__main__":
-    bot = SolanaLaunchBot()
-    asyncio.run(bot.start())
+# Start bot in background
+bot = SolanaLaunchBot()
+asyncio.create_task(bot.start())
+
+@app.get("/")
+def home():
+    return {"message": "Bot is running!"}
