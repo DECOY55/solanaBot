@@ -96,8 +96,16 @@ bot = SolanaLaunchBot()
 # Use FastAPI's startup event to launch the bot in the background.
 @app.on_event("startup")
 async def startup_event():
-    # This schedules the bot to start once the FastAPI app starts.
-    asyncio.create_task(bot.start())
+    try:
+        # Try to get the current running loop
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        # If there's no loop, create one and set it as current
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    # Schedule the bot to run in the background
+    loop.create_task(bot.start())
+
 
 # A simple HTTP route to verify that the FastAPI app is working.
 @app.get("/")
