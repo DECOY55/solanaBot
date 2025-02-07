@@ -1,4 +1,4 @@
-# app.py (Main File) - Modified for Vercel
+# app.py (Main File) - Modified for Vercel with FastAPI Startup Event
 import os
 import asyncio
 from fastapi import FastAPI
@@ -27,30 +27,29 @@ class SolanaLaunchBot:
         self.portfolio = {}
 
     async def start(self):
-        """Start all bot services"""
+        """Start all bot services concurrently."""
         await asyncio.gather(
             self.listen_new_mints(),
             self.monitor_profits()
         )
 
     async def listen_new_mints(self):
-        """Watch for new token launches"""
+        """Watch for new token launches."""
         async with connect(RPC_URL) as websocket:
             await websocket.account_subscribe(
                 program_id="TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
                 commitment="confirmed"
             )
-            
             while True:
                 msg = await websocket.recv()
                 new_token = str(msg[0].result.value.pubkey)
-                
                 if new_token not in self.seen_tokens:
                     self.seen_tokens.add(new_token)
+                    # Schedule processing of the new token
                     asyncio.create_task(self.process_new_token(new_token))
 
     async def process_new_token(self, token_address: str):
-        """Handle new token detection"""
+        """Handle new token detection."""
         if await self.is_safe_token(token_address):
             await self.execute_trade(token_address, is_buy=True)
             self.portfolio[token_address] = {
@@ -65,7 +64,7 @@ class SolanaLaunchBot:
             )
 
     async def monitor_profits(self):
-        """Automatic profit taking"""
+        """Automatic profit taking."""
         while True:
             for token, data in list(self.portfolio.items()):
                 current_price = await self.get_price(token)
@@ -80,29 +79,27 @@ class SolanaLaunchBot:
             await asyncio.sleep(60)
 
     async def is_safe_token(self, token_address: str) -> bool:
-        """Implement your safety checks here"""
+        """Implement your safety checks here."""
         return True  # Add actual checks
 
     async def get_price(self, token_address: str) -> float:
-        """Get token price from DEX"""
+        """Get token price from DEX."""
         return 0.0  # Implement price checking
 
     async def execute_trade(self, token_address: str, is_buy: bool):
-        """Execute buy/sell trade"""
+        """Execute buy/sell trade."""
         print(f"{'Buying' if is_buy else 'Selling'} {token_address[:6]}...")
 
-from fastapi import BackgroundTasks
-
+# Create a single bot instance.
 bot = SolanaLaunchBot()
 
-async def run_bot():
-    await bot.start()
-
+# Use FastAPI's startup event to launch the bot in the background.
 @app.on_event("startup")
 async def startup_event():
-    asyncio.create_task(run_bot())  # Background task to start the bot
+    # This schedules the bot to start once the FastAPI app starts.
+    asyncio.create_task(bot.start())
 
+# A simple HTTP route to verify that the FastAPI app is working.
 @app.get("/")
 async def home():
     return {"message": "Bot is running!"}
-
