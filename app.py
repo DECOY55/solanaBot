@@ -122,7 +122,7 @@ async def startup_event():
     # Start the bot in the background.
     loop.create_task(bot.start())
 
-# A simple HTTP route to verify that FastAPI is running.
+# A simple HTTP route to verify that FastAPI is rrunning.
 @app.get("/")
 async def home():
     return {"message": "Bot is running!"}
