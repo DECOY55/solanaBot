@@ -91,10 +91,11 @@ class SolanaLaunchBot:
         """Execute buy/sell trade"""
         print(f"{'Buying' if is_buy else 'Selling'} {token_address[:6]}...")
 
-# Start bot in background
 bot = SolanaLaunchBot()
-asyncio.create_task(bot.start())
 
-@app.get("/")
-def home():
-    return {"message": "Bot is running!"}
+async def main():
+    await bot.start()
+
+# Vercel requires a handler function
+async def handler(event, context):
+    return await main()
