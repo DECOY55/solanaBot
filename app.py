@@ -1,4 +1,4 @@
-# app.py (Main File) - Modified for Vercel with FastAPI Startup Event
+# app.py (Main File) - Modified for Vercel with FastAPI Startup Event and Test Message
 import os
 import asyncio
 from fastapi import FastAPI
@@ -7,8 +7,8 @@ from solana.rpc.async_api import AsyncClient
 from solana.rpc.websocket_api import connect
 from telegram import Bot
 
-# ===== CONFIG ===== (REPLACE THESE VALUES)
-PRIVATE_KEY = os.getenv("PRIVATE_KEY")  # From environment
+# ===== CONFIG ===== (Replace these values via Vercel Environment Variables)
+PRIVATE_KEY = os.getenv("PRIVATE_KEY")  # Base58 encoded private key
 RPC_URL = os.getenv("RPC_URL", "https://api.mainnet-beta.solana.com")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
@@ -35,6 +35,13 @@ class SolanaLaunchBot:
 
     async def listen_new_mints(self):
         """Watch for new token launches."""
+        # For testing purposes: simulate a token event after a delay.
+        await asyncio.sleep(10)  # Wait 10 seconds after startup.
+        test_token = "TEST123456"
+        await self.process_new_token(test_token)
+        
+        # When ready for real data, comment out the simulation above and uncomment below:
+        """
         async with connect(RPC_URL) as websocket:
             await websocket.account_subscribe(
                 program_id="TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
@@ -45,8 +52,8 @@ class SolanaLaunchBot:
                 new_token = str(msg[0].result.value.pubkey)
                 if new_token not in self.seen_tokens:
                     self.seen_tokens.add(new_token)
-                    # Schedule processing of the new token
                     asyncio.create_task(self.process_new_token(new_token))
+        """
 
     async def process_new_token(self, token_address: str):
         """Handle new token detection."""
@@ -80,11 +87,11 @@ class SolanaLaunchBot:
 
     async def is_safe_token(self, token_address: str) -> bool:
         """Implement your safety checks here."""
-        return True  # Add actual checks
+        return True  # Replace with actual checks
 
     async def get_price(self, token_address: str) -> float:
         """Get token price from DEX."""
-        return 0.0  # Implement price checking
+        return 0.0  # Replace with actual price-checking logic
 
     async def execute_trade(self, token_address: str, is_buy: bool):
         """Execute buy/sell trade."""
@@ -96,18 +103,26 @@ bot = SolanaLaunchBot()
 # Use FastAPI's startup event to launch the bot in the background.
 @app.on_event("startup")
 async def startup_event():
+    # Ensure there's an event loop; create one if needed.
     try:
-        # Try to get the current running loop
         loop = asyncio.get_running_loop()
     except RuntimeError:
-        # If there's no loop, create one and set it as current
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-    # Schedule the bot to run in the background
+    
+    # Send a test message to Telegram to verify integration.
+    try:
+        await bot.bot.send_message(
+            CHAT_ID,
+            "Bot has started successfully on Vercel!"
+        )
+    except Exception as e:
+        print(f"Error sending startup message: {e}")
+    
+    # Start the bot in the background.
     loop.create_task(bot.start())
 
-
-# A simple HTTP route to verify that the FastAPI app is working.
+# A simple HTTP route to verify that FastAPI is running.
 @app.get("/")
 async def home():
     return {"message": "Bot is running!"}
